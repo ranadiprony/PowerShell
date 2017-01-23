@@ -22,7 +22,7 @@ function Get-ConsoleColors
    #>
 
    [CmdletBinding()]
-   param
+   Param
    (
       [Parameter()]
       [ConsoleColor]$Color = 'white'
