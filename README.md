@@ -14,6 +14,9 @@ Get basic information about computers
 <li><b>Get-ConsoleColors</b></li>
 Show a bunch of colors in console window
 
+<li><b>Get-UserLogs</b></li>
+Get users and their server log times
+
 <li><b>Update-ConsoleWindow</b></li>
 Hide or show PowerShell console window
 </ul>
