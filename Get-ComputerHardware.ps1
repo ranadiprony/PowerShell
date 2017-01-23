@@ -4,7 +4,7 @@ function Get-ComputerHardware
 {
    <#
          .Synopsis
-         Get basic information about computer
+         Get basic information about computers
 
          .NOTES
          Tobias Haase
@@ -23,7 +23,7 @@ function Get-ComputerHardware
    #>
 
    [CmdletBinding()]
-   param
+   Param
    (
       [Parameter(Mandatory, ValueFromPipeline)]
       [array]$ComputerName,
