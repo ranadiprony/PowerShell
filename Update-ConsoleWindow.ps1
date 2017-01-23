@@ -4,7 +4,7 @@ function Update-ConsoleWindow
 {
    <#
          .Synopsis
-         Hide or show powershell console window
+         Hide or show PowerShell console window
 
          .NOTES
          Tobias Haase
@@ -30,7 +30,7 @@ function Update-ConsoleWindow
    #>
 
    [CmdletBinding()]
-   param
+   Param
    (
       [Parameter()]
       [switch]$Hide,
