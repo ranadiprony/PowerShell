@@ -61,7 +61,7 @@ function Enter-RemoteRegistry
    #>
 
    [CmdletBinding(DefaultParameterSetName = 'Read')]
-   param
+   Param
    (
       [Parameter(ParameterSetName = 'Read')]
       [Switch]$Read,
@@ -97,9 +97,9 @@ function Enter-RemoteRegistry
       $ErrorActionPreference = 'Stop'
 
       # collect pipe input
-      if ($input)
+      if ($Input)
       {
-         $Computername = $input
+         $Computername = $Input
       }
 
       # verify valuedata
