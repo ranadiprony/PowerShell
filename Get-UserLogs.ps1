@@ -54,38 +54,52 @@ function Get-UserLogs
    #>
 
    [CmdletBinding()]
-   Param
+   param
    (
-      [Parameter(Mandatory, ValueFromPipeline)]
-      [array]$ComputerName,
+      [Parameter(
+            Mandatory,
+            ValueFromPipeline
+      )]
+      [Array]$ComputerName,
 
       [Parameter()]
-      [ValidateSet('Interactive', 'Network', 'Batch', 'Service', 'Unlock', 'Networkcleartext', 'NewCredentials', 'RemoteInteractive', 'CachedInteractive')]
-      [string]$LogonType = $null,
+      [ValidateSet(
+            'Interactive',
+            'Network',
+            'Batch',
+            'Service',
+            'Unlock',
+            'Networkcleartext',
+            'NewCredentials',
+            'RemoteInteractive',
+            'CachedInteractive'
+      )]
+      [String]$LogonType = $null,
 
       [Parameter()]
-      [string]$UserName = $null,
+      [String]$UserName = $null,
 
       [Parameter()]
-      [string]$StartTime,
+      [String]$StartTime,
 
       [Parameter()]
-      [string]$EndTime,
+      [String]$EndTime,
 
       [Parameter()]
-      [switch]$Credential,
+      [Switch]$Credential,
 
       [Parameter()]
-      [switch]$OnlyLogin,
+      [Switch]$OnlyLogin,
 
       [Parameter()]
-      [switch]$OnlyLogoff
+      [Switch]$OnlyLogoff
    )
 
    begin
    {
       # do some error handling
-      $ErrorActionPreference = 'Stop'
+      $ErrorActionPreferenceInit = $ErrorActionPreference
+      $ErrorActionPreference     = 'Stop'
 
       # define logon types
       $LogonTypes = @{
@@ -100,6 +114,9 @@ function Get-UserLogs
          '11' = 'CachedInteractive'
       }
 
+      # collect pipe input
+      if ($Input) {$ComputerName = $Input}
+
       # ask for credentials if necessary
       switch ($Credential)
       {
@@ -108,12 +125,8 @@ function Get-UserLogs
             $Cred    = Get-Credential -Message 'Waiting for your credentials'
             $Command = 'Get-WinEvent -ComputerName $Computer -FilterHashtable $Filter -Credential $Cred'
          }
-
          default {$Command = 'Get-WinEvent -ComputerName $Computer -FilterHashtable $Filter'}
       }
-
-      # collect pipe input
-      if ($Input) {$ComputerName = $Input}
 
       # give attention when logontype or username are set
       Write-Host -Object ''
@@ -138,7 +151,6 @@ function Get-UserLogs
             default    {[datetime]$EndTime = (Get-Date)}
          }
       }
-
       catch
       {
          Write-Warning -Message 'Please check starttime/endtime'
@@ -148,29 +160,25 @@ function Get-UserLogs
 
       function Output
       {
-         param
-         (
+         Param (
             [switch]$Login,
             [switch]$Logoff,
             [string]$Output
          )
 
-         if ($Login)
-         {
-            Write-Host -BackgroundColor DarkGreen -NoNewline -Object "[login]"
+         if ($Login) {
+            Write-Host -BackgroundColor DarkGreen -NoNewline -Object '[login]'
             Write-Host -Object "  $Date $Time " -NoNewline
          }
 
-         if ($Logoff)
-         {
-            Write-Host -BackgroundColor DarkRed -NoNewline -Object "[logoff]"
+         if ($Logoff) {
+            Write-Host -BackgroundColor DarkRed -NoNewline -Object '[logoff]'
             Write-Host -Object " $Date $Time " -NoNewline
          }
 
          Write-Host -Object $Output
       }
    }
-
    process
    {
       foreach ($Computer in $ComputerName)
@@ -214,7 +222,6 @@ function Get-UserLogs
                         }
                      }
                   }
-
                   else
                   {
                      switch ($Event.ID)
@@ -224,7 +231,6 @@ function Get-UserLogs
                      }
                   }
                }
-
                elseif (-not $UserName)
                {
                   if ($LogonType)
@@ -238,7 +244,6 @@ function Get-UserLogs
                         }
                      }
                   }
-
                   else
                   {
                      switch ($Event.ID)
@@ -250,13 +255,12 @@ function Get-UserLogs
                }
             }
          }
-
-         catch
-         {
+         catch {
             Write-Host -Object 'Error while reading data' -ForegroundColor Red
             Write-Host -Object $Error[0]
             Continue
          }
       }
    }
+   end {$ErrorActionPreference = $ErrorActionPreferenceInit}
 }
