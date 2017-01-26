@@ -1,6 +1,6 @@
-﻿#requires -Version 1.0
+﻿#requires -Version 3.0
 
-function Get-ConsoleColors 
+function Get-ConsoleColors
 {
    <#
          .Synopsis
@@ -19,41 +19,52 @@ function Get-ConsoleColors
 
          .EXAMPLE
          Get-ConsoleColors -Color Yellow
+
+         .EXAMPLE
+         'yellow', 'red' | Get-ConsoleColors
    #>
 
-   [CmdletBinding()]
-   Param
+   [CmdletBinding(PositionalBinding = $false)]
+   param
    (
-      [Parameter()]
-      [ConsoleColor]$Color = 'white'
+      [Parameter(ValueFromPipeline)]
+      [String]$Color = 'white'
    )
 
    begin
    {
       # do some error handling
-      $ErrorActionPreference = 'Stop'
+      $ErrorActionPreferenceInit = $ErrorActionPreference
+      $ErrorActionPreference     = 'Stop'
 
       # get all possible colors
-      $ConsoleColors = [ConsoleColor].GetEnumNames()
+      try   {$ConsoleColors = [ConsoleColor].GetEnumNames()}
+      catch {"[ERROR@$($_.InvocationInfo.ScriptLineNumber)] $_"}
    }
-
    process
    {
-      foreach ($ConsoleColor in $ConsoleColors)
+      try
       {
-         if ($Color)
+         foreach ($ConsoleColor in $ConsoleColors)
          {
-            Write-Host -BackgroundColor $Color -ForegroundColor ([ConsoleColor]::$ConsoleColor) -Object (' ' + ([ConsoleColor]::$ConsoleColor).ToString().PadRight(($ConsoleColors | Measure-Object -Maximum -Property Length).Maximum) + ' ') -NoNewline
-            Write-Host -Object ' ' -NoNewline
-            Write-Host -ForegroundColor $Color -BackgroundColor ([ConsoleColor]::$ConsoleColor) -Object (' ' + ([ConsoleColor]::$ConsoleColor).ToString().PadRight(($ConsoleColors | Measure-Object -Maximum -Property Length).Maximum) + ' ')
-         }
+            # design two columns with names of colors
+            $Object = ' ' + ([ConsoleColor]::$ConsoleColor).ToString().PadRight(($ConsoleColors | Measure-Object -Maximum -Property Length).Maximum) + ' '
 
-         else
-         {
-            Write-Host -ForegroundColor ([ConsoleColor]::$ConsoleColor) -Object (' ' + ([ConsoleColor]::$ConsoleColor).ToString().PadRight(($ConsoleColors | Measure-Object -Maximum -Property Length).Maximum) + ' ') -NoNewline
-            Write-Host -Object ' ' -NoNewline
-            Write-Host -BackgroundColor ([ConsoleColor]::$ConsoleColor) -Object (' ' + ([ConsoleColor]::$ConsoleColor).ToString().PadRight(($ConsoleColors | Measure-Object -Maximum -Property Length).Maximum) + ' ')
+            if ($Color)
+            {
+               Write-Host -BackgroundColor ([ConsoleColor]::$Color) -ForegroundColor ([ConsoleColor]::$ConsoleColor) -NoNewline -Object $Object
+               Write-Host -Object ' ' -NoNewline
+               Write-Host -ForegroundColor ([ConsoleColor]::$Color) -BackgroundColor ([ConsoleColor]::$ConsoleColor) -Object $Object
+            }
+            else
+            {
+               Write-Host -ForegroundColor ([ConsoleColor]::$ConsoleColor) -Object $Object -NoNewline
+               Write-Host -Object ' ' -NoNewline
+               Write-Host -BackgroundColor ([ConsoleColor]::$ConsoleColor) -Object $Object
+            }
          }
       }
+      catch {"[ERROR@$($_.InvocationInfo.ScriptLineNumber)] $_"}
    }
+   end {$ErrorActionPreference = $ErrorActionPreferenceInit}
 }
