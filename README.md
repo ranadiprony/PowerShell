@@ -19,4 +19,7 @@ Get users and their server log times
 
 <li><b>Update-ConsoleWindow</b></li>
 Hide or show PowerShell console window
+
+<li><b>Write-Log</b></li>
+Send message to logfile
 </ul>
