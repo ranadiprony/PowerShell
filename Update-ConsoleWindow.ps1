@@ -16,60 +16,53 @@ function Update-ConsoleWindow
          Only useful if called within a different runspace or process.
          Keep in mind: If called in current console the window is hidden with the process remaining in memory.
 
-         .PARAMETER Hide
-         Hide console
-
-         .PARAMETER Show
-         Show console
-
-         .EXAMPLE
-         Update-ConsoleWindow -Hide
-
-         .EXAMPLE
-         Update-ConsoleWindow -Show
+         .PARAMETER Handle
+         0  HIDE
+         1  NORMAL
+         2  SHOWMINIMIZED
+         3  SHOWMAXIMIZED
+         4  SHOWNOACTIVATE
+         5  SHOW
+         6  MINIMIZE
+         7  SHOWMINNOACTIVE
+         8  SHOWNA
+         9  RESTORE
+         10 SHOWDEFAULT
+         11 FORCEMINIMIZE
    #>
 
    [CmdletBinding()]
-   Param
+   param
    (
-      [Parameter()]
-      [switch]$Hide,
-
-      [Parameter()]
-      [switch]$Show
+      [Parameter(
+            Mandatory,
+            ValueFromPipeline
+      )]
+      [Int]$Handle = 1
    )
 
-   # initialize function
-
-   try
+   begin
    {
-      Add-Type -Name 'Window' -Namespace 'Console' -MemberDefinition '
-         [DllImport("Kernel32.dll")]
-         public static extern IntPtr GetConsoleWindow();
-
-         [DllImport("user32.dll")]
-         public static extern bool ShowWindow(IntPtr hWnd, Int32 nCmdShow);
-      '
+      # do some error handling
+      $ErrorActionPreferenceInit = $ErrorActionPreference
+      $ErrorActionPreference     = 'Stop'
    }
-
-   catch
+   process
    {
-   }
+      try
+      {
+         # initialize function
+         Add-Type -Name 'Window' -Namespace 'Console' -MemberDefinition '
+            [DllImport("Kernel32.dll")]
+            public static extern IntPtr GetConsoleWindow();
 
-   if ($Hide)
-   {
-      $consolePtr = [Console.Window]::GetConsoleWindow()
-      $null       = [Console.Window]::ShowWindow($consolePtr,0)
-   }
+            [DllImport("user32.dll")]
+            public static extern bool ShowWindow(IntPtr hWnd, Int32 nCmdShow);
+         '
 
-   elseif ($Show)
-   {
-      $consolePtr = [Console.Window]::GetConsoleWindow()
-      $null       = [Console.Window]::ShowWindow($consolePtr,5)
+         $null = [Console.Window]::ShowWindow([Console.Window]::GetConsoleWindow(),$Handle)
+      }
+      catch {"[ERROR@$($_.InvocationInfo.ScriptLineNumber)] $_"}
    }
-
-   else
-   {
-      Write-Warning -Message "Use parameter 'Hide' or 'Show' to make some action"
-   }
+   end {$ErrorActionPreference = $ErrorActionPreferenceInit}
 }
