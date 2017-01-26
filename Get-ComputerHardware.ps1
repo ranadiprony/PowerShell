@@ -23,30 +23,33 @@ function Get-ComputerHardware
    #>
 
    [CmdletBinding()]
-   Param
+   param
    (
-      [Parameter(Mandatory, ValueFromPipeline)]
-      [array]$ComputerName,
+      [Parameter(
+            Mandatory,
+            ValueFromPipeline
+      )]
+      [Array]$ComputerName,
 
       [Parameter()]
-      [switch]$Credential
+      [Switch]$Credential
    )
 
    begin
    {
       # do some error handling
-      $ErrorActionPreference = 'Stop'
+      $ErrorActionPreferenceInit = $ErrorActionPreference
+      $ErrorActionPreference     = 'Stop'
+
+      # collect pipe input
+      if ($Input) {$ComputerName = $Input}
 
       # ask for credentials if necessary
-      if ($Credential)
-      {
-         $Cred = Get-Credential -Message 'Waiting for your credentials'
-      }
+      if ($Credential) {$Cred = Get-Credential -Message 'Waiting for your credentials'}
 
       # define array for result
       [Collections.ArrayList]$Output = @()
    }
-
    process
    {
       foreach ($Computer in $ComputerName)
@@ -59,7 +62,6 @@ function Get-ComputerHardware
                $ComputerSystem = Get-WmiObject -Class Win32_ComputerSystem -ComputerName $Computer -Credential $Cred
                $LogicalDisk    = Get-WmiObject -Class Win32_LogicalDisk -ComputerName $Computer -Credential $Cred | Where-Object -Property MediaType -EQ -Value '12'
             }
-
             # no credentials set
             else
             {
@@ -76,7 +78,7 @@ function Get-ComputerHardware
             {
                $Size      = $('{0} GB' -f [math]::Round(($LogicalDisk | Where-Object -FilterScript {$_.DeviceID -eq $($Drive + ':')}).Size/1GB))
                $FreeSpace = $('{0} GB' -f [math]::Round(($LogicalDisk | Where-Object -FilterScript {$_.DeviceID -eq $($Drive + ':')}).FreeSpace/1GB))
-               
+
                Set-Variable -Name $('Disk{0}_s' -f $Drive) -Value $Size -Force
                Set-Variable -Name $('Disk{0}_f' -f $Drive) -Value $FreeSpace -Force
             }
@@ -95,20 +97,20 @@ function Get-ComputerHardware
 
             $Output += New-Object -TypeName PSObject -Property $Data
          }
-
          catch
          {
             # set data for output
             $Data             = [ordered]@{}
             $Data.Server      = $Computer.ToUpper()
             $Data.Information = 'error'
+            
             $Output += New-Object -TypeName PSObject -Property $Data
          }
       }
    }
-
    end
    {
+      $ErrorActionPreference = $ErrorActionPreferenceInit
       $Output
    }
 }
