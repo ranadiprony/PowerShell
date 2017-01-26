@@ -61,7 +61,7 @@ function Enter-RemoteRegistry
    #>
 
    [CmdletBinding(DefaultParameterSetName = 'Read')]
-   Param
+   param
    (
       [Parameter(ParameterSetName = 'Read')]
       [Switch]$Read,
@@ -72,7 +72,10 @@ function Enter-RemoteRegistry
       [Parameter(ParameterSetName = 'Write')]
       [Switch]$Write,
 
-      [Parameter(Mandatory, ValueFromPipeline)]
+      [Parameter(
+            Mandatory,
+            ValueFromPipeline
+      )]
       [Array]$Computername,
 
       [Parameter(Mandatory)]
@@ -94,13 +97,11 @@ function Enter-RemoteRegistry
    begin
    {
       # do some error handling
-      $ErrorActionPreference = 'Stop'
+      $ErrorActionPreferenceInit = $ErrorActionPreference
+      $ErrorActionPreference     = 'Stop'
 
       # collect pipe input
-      if ($Input)
-      {
-         $Computername = $Input
-      }
+      if ($Input) {$Computername = $Input}
 
       # verify valuedata
       try
@@ -110,30 +111,27 @@ function Enter-RemoteRegistry
 
          switch ($ValueKind)
          {
-            {$_ -eq 'Binary'}       {[byte]$ValueData = $OldValueData}
-            {$_ -eq 'DWord'}        {[int32]$ValueData = $OldValueData}
-            {$_ -eq 'ExpandString'} {[string]$ValueData = $OldValueData}
-            {$_ -eq 'MultiString'}  {[string]$ValueData = $OldValueData}
-            {$_ -eq 'QWord'}        {[int64]$ValueData = $OldValueData}
-            {$_ -eq 'String'}       {[string]$ValueData = $OldValueData}
-
+            {$_ -eq 'Binary'}       {[Byte]$ValueData = $OldValueData}
+            {$_ -eq 'DWord'}        {[Int32]$ValueData = $OldValueData}
+            {$_ -eq 'ExpandString'} {[String]$ValueData = $OldValueData}
+            {$_ -eq 'MultiString'}  {[String]$ValueData = $OldValueData}
+            {$_ -eq 'QWord'}        {[Int64]$ValueData = $OldValueData}
+            {$_ -eq 'String'}       {[String]$ValueData = $OldValueData}
             default
             {
                $ValueKind         = 'String'
-               [string]$ValueData = $OldValueData
+               [String]$ValueData = $OldValueData
             }
          }
 
          Remove-Variable -Name 'OldValueData' -Force
       }
-
       catch
       {
          Write-Warning -Message 'Wrong format of ValueData'
          break
       }
    }
-
    process
    {
       foreach ($Computer in $Computername)
@@ -143,16 +141,8 @@ function Enter-RemoteRegistry
          Write-Verbose -Message $Computer
 
          # set basekey depending on registry root
-         if ($Path -match '^HKLM:\\(.*)')
-         {
-            $BaseKey = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $Computer)
-         }
-
-         elseif ($Path -match '^HKCU:\\(.*)')
-         {
-            $BaseKey = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('CurrentUser', $Computer)
-         }
-
+         if     ($Path -match '^HKLM:\\(.*)') {$BaseKey = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('LocalMachine', $Computer)}
+         elseif ($Path -match '^HKCU:\\(.*)') {$BaseKey = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey('CurrentUser', $Computer)}
          else
          {
             Write-Warning -Message 'Only HKLM and HKCU are supported'
@@ -199,19 +189,15 @@ function Enter-RemoteRegistry
             if ($PsCmdlet.ParameterSetName -eq 'Read')
             {
                #--------------------------------------------------------------- SUBKEYS -----------------------------------------------------------------------
-
                if (-not $ValueName)
                {
                   Write-Verbose -Message "Found $($SubKey.SubKeyCount) subkeys"
-
                   $SubKey.GetSubKeyNames()
                }
-
                #---------------------------------------------------------------- VALUES -----------------------------------------------------------------------
-
                elseif ($ValueName)
                {
-                  [System.Collections.ArrayList]$ValueNames = @()
+                  [Collections.ArrayList]$ValueNames = @()
 
                   Write-Verbose -Message "Found $($SubKey.ValueCount) values"
 
@@ -230,25 +216,16 @@ function Enter-RemoteRegistry
                   Write-Verbose -Message "Filter set to value '$ValueName'"
 
                   # output all values
-                  if ($ValueName -eq '*')
-                  {
-                     $ValueNames
-                  }
-
+                  if ($ValueName -eq '*') {$ValueNames}
                   # output matching values
-                  else
-                  {
-                     $ValueNames | Where-Object -FilterScript {$_.ValueName -eq $ValueName}
-                  }
+                  else {$ValueNames | Where-Object -FilterScript {$_.ValueName -eq $ValueName}}
                }
             }
-
             #_________________________________________________________ D E L E T E  |  W R I T E ______________________________________________________________
 
             elseif ($PsCmdlet.ParameterSetName -match '(Delete|Write)')
             {
                #---------------------------------------------------------------- SUBKEYS ----------------------------------------------------------------------
-
                if (-not $ValueName)
                {
                   if ($Force)
@@ -270,11 +247,7 @@ function Enter-RemoteRegistry
                         $BaseKey.Close()
                         return
                      }
-
-                     else
-                     {
-                        Write-Verbose -Message "SubKey '$($SubKey.Name)' opened"
-                     }
+                     else {Write-Verbose -Message "SubKey '$($SubKey.Name)' opened"}
 
                      # delete subkey
                      $null = $SubKey.DeleteSubKeyTree($SubKeyName)
@@ -289,10 +262,7 @@ function Enter-RemoteRegistry
                      $SubKey     = $BaseKey.OpenSubKey($SubKeyPath, $true)
                   }
 
-                  if (-not $Force)
-                  {
-                     Write-Warning -Message "SubKey '$($SubKey.Name)' exists, use parameter -Force"
-                  }
+                  if (-not $Force) {Write-Warning -Message "SubKey '$($SubKey.Name)' exists, use parameter -Force"}
                }
 
                #---------------------------------------------------------------- VALUES -----------------------------------------------------------------------
@@ -312,13 +282,12 @@ function Enter-RemoteRegistry
                      }
                   }
 
+                  # check for existing valuenames
                   if (-not $Force)
                   {
-                     # check for existing valuenames
                      if ($SubKey.GetValue($ValueName) -ne $null)
                      {
                         Write-Warning -Message "Value '$ValueName' exists, use parameter -Force"
-
                         Write-Verbose -Message "Current ValueData: $($SubKey.GetValue($ValueName))"
                         Write-Verbose -Message "Current ValueKind: $($SubKey.GetValueKind($ValueName))"
                      }
@@ -326,17 +295,11 @@ function Enter-RemoteRegistry
 
                   if ($SubKey.GetValue($ValueName) -eq $null)
                   {
-                     if ($PsCmdlet.ParameterSetName -eq 'Delete')
-                     {
-                        Write-Verbose -Message "ValueName '$ValueName' not found"
-                     }
+                     if ($PsCmdlet.ParameterSetName -eq 'Delete') {Write-Verbose -Message "ValueName '$ValueName' not found"}
 
                      if ($PsCmdlet.ParameterSetName -eq 'Write')
                      {
-                        if ($ValueData -eq $null)
-                        {
-                           Write-Warning -Message 'ValueData missing'
-                        }
+                        if ($ValueData -eq $null) {Write-Warning -Message 'ValueData missing'}
 
                         if ($ValueData -ne $null)
                         {
@@ -349,11 +312,7 @@ function Enter-RemoteRegistry
                               Write-Verbose -Message "New ValueData: $ValueData"
                               Write-Verbose -Message "New ValueKind: $ValueKind"
                            }
-
-                           else
-                           {
-                              Write-Warning -Message "Error setting value '$ValueName'"
-                           }
+                           else {Write-Warning -Message "Error setting value '$ValueName'"}
                         }
                      }
                   }
@@ -382,11 +341,7 @@ function Enter-RemoteRegistry
                   $BaseKey.Close()
                   return
                }
-
-               else
-               {
-                  Write-Verbose -Message "SubKey '$($SubKey.Name)' opened"
-               }
+               else {Write-Verbose -Message "SubKey '$($SubKey.Name)' opened"}
 
                # create subkey
                $null = $SubKey.CreateSubKey($SubKeyName)
@@ -417,4 +372,5 @@ function Enter-RemoteRegistry
          $BaseKey.Close()
       }
    }
+   end {$ErrorActionPreference = $ErrorActionPreferenceInit}
 }
