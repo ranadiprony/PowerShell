@@ -5,6 +5,10 @@ here are some of my latest PowerShell-cmdlets. I'm not a pro, just scripting for
 Have fun! :-)
 
 <ul>
+
+<li><b>Convert-NumbersToWords</b></li>
+Convert numbers to written (german) words
+
 <li><b>Enter-RemoteRegistry</b></li>
 Read, delete or write subkeys and values of a registry on a remote computer
 
