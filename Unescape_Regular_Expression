@@ -1,0 +1,1 @@
+$jsonfile | ConvertTo-Json | % { [System.Text.RegularExpressions.Regex]::Unescape($_) } | Out-File "new.json"
